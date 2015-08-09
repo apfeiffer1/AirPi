@@ -17,6 +17,80 @@ def get_subclasses(mod,cls):
 			return obj
 
 
+
+def fastReadout(mainConfig):
+
+    global sensorPlugins
+
+    lastUpdated = 0
+    delayTime = mainConfig.getfloat("Main","uploadDelay")
+    while True:
+        curTime = time.time()
+        if (curTime-lastUpdated)>delayTime:
+        	lastUpdated = curTime
+        	data = []
+        	#Collect the data from each sensor
+        	for i in sensorPlugins:
+        		dataDict = {}
+        		val = i.getVal()
+        		if val==None: #this means it has no data to upload.
+        			continue
+        		dataDict["value"] = i.getVal()
+        		dataDict["unit"] = i.valUnit
+        		dataDict["symbol"] = i.valSymbol
+        		dataDict["name"] = i.valName
+        		dataDict["sensor"] = i.sensorName
+        		data.append(dataDict)
+        	working = True
+        	for i in outputPlugins:
+        		working = working and i.outputData(data)
+        	if working:
+        		print "Uploaded successfully"
+        		GPIO.output(greenPin,GPIO.HIGH)
+        	else:
+        		print "Failed to upload"
+        		GPIO.output(redPin,GPIO.HIGH)
+        	time.sleep(1)
+        	GPIO.output(greenPin,GPIO.LOW)
+        	GPIO.output(redPin,GPIO.LOW)
+    
+def slowReadout(mainConfig):
+
+    # instead of only sleeping 1 sec, use the uploadDelay to sleep
+    # this is (much) less heavy on the CPU (and keeps the measured temp down!)
+
+    global sensorPlugins
+    
+    delayTime = mainConfig.getfloat("Main","uploadDelay")
+
+    data = []
+    #Collect the data from each sensor
+    for i in sensorPlugins:
+    	dataDict = {}
+    	val = i.getVal()
+    	if val==None: #this means it has no data to upload.
+    		continue
+    	dataDict["value"] = i.getVal()
+    	dataDict["unit"] = i.valUnit
+    	dataDict["symbol"] = i.valSymbol
+    	dataDict["name"] = i.valName
+    	dataDict["sensor"] = i.sensorName
+    	data.append(dataDict)
+    working = True
+    for i in outputPlugins:
+    	working = working and i.outputData(data)
+    if working:
+    	print "Uploaded successfully"
+    	GPIO.output(greenPin,GPIO.HIGH)
+    else:
+    	print "Failed to upload"
+    	GPIO.output(redPin,GPIO.HIGH)
+
+    time.sleep(delayTime)
+
+    GPIO.output(greenPin,GPIO.LOW)
+    GPIO.output(redPin,GPIO.LOW)
+    
 if not os.path.isfile('sensors.cfg'):
 	print "Unable to access config file: sensors.cfg"
 	exit(1)
@@ -166,38 +240,12 @@ if not os.path.isfile("settings.cfg"):
 mainConfig = ConfigParser.SafeConfigParser()
 mainConfig.read("settings.cfg")
 
-lastUpdated = 0
-delayTime = mainConfig.getfloat("Main","uploadDelay")
 redPin = mainConfig.getint("Main","redPin")
 greenPin = mainConfig.getint("Main","greenPin")
 GPIO.setup(redPin,GPIO.OUT,initial=GPIO.LOW)
 GPIO.setup(greenPin,GPIO.OUT,initial=GPIO.LOW)
-while True:
-	curTime = time.time()
-	if (curTime-lastUpdated)>delayTime:
-		lastUpdated = curTime
-		data = []
-		#Collect the data from each sensor
-		for i in sensorPlugins:
-			dataDict = {}
-			val = i.getVal()
-			if val==None: #this means it has no data to upload.
-				continue
-			dataDict["value"] = i.getVal()
-			dataDict["unit"] = i.valUnit
-			dataDict["symbol"] = i.valSymbol
-			dataDict["name"] = i.valName
-			dataDict["sensor"] = i.sensorName
-			data.append(dataDict)
-		working = True
-		for i in outputPlugins:
-			working = working and i.outputData(data)
-		if working:
-			print "Uploaded successfully"
-			GPIO.output(greenPin,GPIO.HIGH)
-		else:
-			print "Failed to upload"
-			GPIO.output(redPin,GPIO.HIGH)
-		time.sleep(1)
-		GPIO.output(greenPin,GPIO.LOW)
-		GPIO.output(redPin,GPIO.LOW)
+
+if mainConfig.getfloat("Main","uploadDelay") < 15: # use fast readout if more frequent readings are needed
+    fastReadout(mainConfig)
+else:
+    slowReadout(mainConfig)
