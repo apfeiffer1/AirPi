@@ -71,6 +71,6 @@ class DBWriter(output.Output):
            conn.close()
             
         except Exception, e:
-           print "ERROR, got:",str(e)
+           print "ERROR when uploading to DB, got exception:", str(e)
            return False
         return True
