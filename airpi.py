@@ -112,7 +112,8 @@ def readoutOnce(mainConfig):
        dataDict["name"] = i.valName
        dataDict["sensor"] = i.sensorName
        data.append(dataDict)
-    
+
+    working = True
     for i in outputPlugins:
        working = working and i.outputData(data)
 
