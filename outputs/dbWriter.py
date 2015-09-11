@@ -11,7 +11,7 @@ import sqlite3
 # Carbon_Monoxide: 127333.333333 Ohms
 # Volume: 716.129032258 mV
 
-dType = { 'Time' : 'text',
+dType = { 'Time' : 'datetime',
           'Temperature' : 'float',
           'Pressure' : 'float', 
           'Relative_Humidity' : 'float', 
@@ -52,9 +52,9 @@ class DBWriter(output.Output):
     def outputData(self,dataPoints):
 
         # we need the data sorted by the keys of dTypeList
-        map = { "Time" : str(datetime.datetime.now()) }
+        map = { "Time" : datetime.datetime.now() }
         for i in dataPoints:
-           map[ i['name'] ] = i["value"]
+           map[ i['name'] ] = i["avg"]
         try:
            conn = sqlite3.connect( self.dbName )
            c = conn.cursor()

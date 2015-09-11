@@ -90,14 +90,12 @@ def slowReadout(mainConfig):
         GPIO.output(greenPin,GPIO.LOW)
         GPIO.output(redPin,GPIO.LOW)
 
-def readoutOnce(mainConfig):
+def readout(mainConfig):
     
     # instead of only sleeping 1 sec, use the uploadDelay to sleep
     # this is (much) less heavy on the CPU (and keeps the measured temp down!)
     
     global sensorPlugins
-    
-    delayTime = mainConfig.getfloat("Main","uploadDelay")
     
     data = []
     #Collect the data from each sensor
@@ -113,9 +111,50 @@ def readoutOnce(mainConfig):
        dataDict["sensor"] = i.sensorName
        data.append(dataDict)
 
+    return data
+
+def readoutOnce(mainConfig):
+
+    readout(mainConfig)
+
     working = True
     for i in outputPlugins:
        working = working and i.outputData(data)
+
+def readoutAverage(mainConfig, integrationTime=5):
+
+    # read every second and average values for <integrationTime> (in seconds) to get a better reading.
+
+    global sensorPlugins
+    delayTime = 1.0 # reading interval
+
+    data = []
+    averages = {}
+    nReads = int(integrationTime/delayTime)
+    print 'going to do %i readings' % nReads
+    for i in range(nReads):
+        data += readout(mainConfig)
+       time.sleep(delayTime)
+
+    for entry in data:
+       if entry['name'] not in averages.keys():
+          averages[ entry['name'] ] = entry
+          averages[ entry['name'] ][ 'sum' ]  = entry['value']
+          averages[ entry['name'] ][ 'sum2' ] = entry['value']*entry['value']
+          averages[ entry['name'] ][ 'n' ] = 1
+       else:
+          averages[ entry['name'] ][ 'sum' ]  += entry['value']
+          averages[ entry['name'] ][ 'sum2' ] += entry['value']*entry['value']
+          averages[ entry['name'] ][ 'n' ] += 1
+
+    outData = []
+    for item in averages.values():
+       item['avg'] = item['sum']/float(item['n'])
+       outData.append(item)
+
+    working = True
+    for i in outputPlugins:
+       working = working and i.outputData(outData)
 
 if not os.path.isfile('sensors.cfg'):
 	print "Unable to access config file: sensors.cfg"
@@ -272,7 +311,8 @@ GPIO.setup(redPin,GPIO.OUT,initial=GPIO.LOW)
 GPIO.setup(greenPin,GPIO.OUT,initial=GPIO.LOW)
 
 if mainConfig.getboolean("Main","singleRun"):
-    readoutOnce(mainConfig)
+    # readoutOnce(mainConfig)
+    readoutAverage(mainConfig, integrationTime=60) # average over 1 min, readings 1 sec apart
     sys.exit(0)
 
 if mainConfig.getfloat("Main","uploadDelay") < 15: # use fast readout if more frequent readings are needed
