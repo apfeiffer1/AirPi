@@ -134,7 +134,7 @@ def readoutAverage(mainConfig, integrationTime=5):
     print 'going to do %i readings' % nReads
     for i in range(nReads):
         data += readout(mainConfig)
-       time.sleep(delayTime)
+        time.sleep(delayTime)
 
     for entry in data:
        if entry['name'] not in averages.keys():
