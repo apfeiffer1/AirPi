@@ -62,7 +62,10 @@ class DBWriter(output.Output):
            # Insert the data
            arr = []
            for k in dTypeList:
-               arr.append( map[k] )
+               if not map.has_key(k):
+                   arr.append( -9999. ) # some fake value
+               else:
+                   arr.append( map[k] )
            qry = "INSERT INTO %s VALUES (?,?,?,?,?,?,?,?);" % (self.tableName,)
            # print "Query: ", qry, ' values: ', arr
            c.execute( qry, arr )
@@ -72,5 +75,6 @@ class DBWriter(output.Output):
             
         except Exception, e:
            print "ERROR when uploading to DB, got exception:", str(e)
+           print "      data from points: ", str(map)
            return False
         return True
