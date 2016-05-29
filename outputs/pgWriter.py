@@ -51,7 +51,7 @@ class PGWriter(output.Output):
             map[k] = -9999.
 
         try:
-            sess = session()
+            sess = airPiSession()
             apd = AirPiData(temp = map['Temperature'], 
                             pres = map['Pressure'], 
                             relH = map['Relative_Humidity'], 

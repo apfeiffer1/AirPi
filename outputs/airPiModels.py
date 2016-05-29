@@ -1,4 +1,5 @@
 import netrc
+import os
 
 import datetime
 
@@ -54,10 +55,13 @@ class AirPiData(Base):
       return "<AirPiData instance: %s>\n" % self.__dict__
 
 
-user,login,pwd = netrc.netrc().authenticators('postgres')
-engine = create_engine('postgresql://pi:%s@rpi2-0.local/airpi' % pwd, echo=False)
-session = sessionmaker(bind=engine)
+# set up the postgres DB connection and make sure we create a uniquely named session
+user,login,pwd = netrc.netrc().authenticators('airPiDB')
+airPiDB = os.environ.get("AIRPI_PG_DATABASE",None)
+print "db: ", airPiDB
+airPiEngine = create_engine(airPiDB % pwd, echo=False)
+airPiSession = sessionmaker(bind=airPiEngine)
 
-session.configure(bind=engine)
+airPiSession.configure(bind=airPiEngine)
 
-Base.metadata.create_all(engine)
+Base.metadata.create_all(airPiEngine)
