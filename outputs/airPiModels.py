@@ -28,7 +28,7 @@ Base = declarative_base()
 # Volume: 716.129032258 mV
 
 class AirPiData(Base):
-    __tablename__ = 'airPiData'
+    __tablename__ = 'airpidata'
 
     id0                = Column(Integer, primary_key=True)
     timeStamp          = Column(DateTime())

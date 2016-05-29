@@ -7,7 +7,7 @@ import ConfigParser
 import time
 import inspect
 import os
-from sys import exit
+import sys
 from sensors import sensor
 from outputs import output
 
@@ -132,9 +132,15 @@ def readoutAverage(mainConfig, integrationTime=5):
     averages = {}
     nReads = int(integrationTime/delayTime)
     print 'going to do %i readings' % nReads
+    sys.stdout.flush()
+
     for i in range(nReads):
         data += readout(mainConfig)
         time.sleep(delayTime)
+	print '.',
+	sys.stdout.flush()
+    print '+'
+    sys.stdout.flush()
 
     for entry in data:
        if entry['name'] not in averages.keys():
@@ -154,11 +160,13 @@ def readoutAverage(mainConfig, integrationTime=5):
 
     working = True
     for i in outputPlugins:
+       print "going to write data out ..."
+       sys.stdout.flush()
        working = working and i.outputData(outData)
 
 if not os.path.isfile('sensors.cfg'):
 	print "Unable to access config file: sensors.cfg"
-	exit(1)
+	sys.exit(1)
 
 sensorConfig = ConfigParser.SafeConfigParser()
 sensorConfig.read('sensors.cfg')

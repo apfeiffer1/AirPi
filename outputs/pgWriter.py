@@ -32,7 +32,7 @@ class PGWriter(output.Output):
     def __init__(self,data):
        self.dbName='airpi'
        if data.has_key('dbName'): self.tableName = data['dbName']
-       self.tableName = 'airPiData'
+       self.tableName = 'airpidata'
        if data.has_key('tableName'): self.tableName = data['tableName']
 
     def outputData(self,dataPoints):
